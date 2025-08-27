@@ -1,9 +1,11 @@
 package net.raphdf201
-
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.channels.consumeEach
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureSockets() {
@@ -14,16 +16,39 @@ fun Application.configureSockets() {
         masking = false
     }
     routing {
-        webSocket("/ws") { // websocketSession
-            for (frame in incoming) {
-                if (frame is Frame.Text) {
-                    val text = frame.readText()
-                    outgoing.send(Frame.Text("YOU SAID: $text"))
-                    if (text.equals("bye", ignoreCase = true)) {
-                        close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
+        val connections = Collections.newSetFromMap<Connection>(ConcurrentHashMap())
+        webSocket("/chat") {
+            val connection = Connection(this)
+            connections += connection
+
+            try {
+                // Send a welcome message
+                send("You are connected! Use /nick <name> to set your username.")
+
+                incoming.consumeEach { frame ->
+                    if (frame is Frame.Text) {
+                        val text = frame.readText()
+                        when {
+                            text.startsWith("/nick ") -> {
+                                connection.name = text.removePrefix("/nick ").trim()
+                                connection.session.send("Your name is now ${connection.name}")
+                            }
+                            else -> {
+                                val sender = connection.name ?: "Anonymous"
+                                connections.forEach {
+                                    it.session.send("[$sender] $text")
+                                }
+                            }
+                        }
                     }
                 }
+            } finally {
+                connections -= connection
             }
         }
     }
+}
+
+data class Connection(val session: DefaultWebSocketServerSession) {
+    var name: String? = null
 }

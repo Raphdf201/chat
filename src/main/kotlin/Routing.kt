@@ -2,6 +2,7 @@ package net.raphdf201
 
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
+import io.ktor.server.http.content.staticResources
 import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -12,8 +13,6 @@ import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureRouting() {
     routing {
-        get("/") {
-            call.respondText("Hello World!")
-        }
+        staticResources("/", "static")
     }
 }
