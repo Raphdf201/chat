@@ -1,8 +1,7 @@
-rootProject.name = "chat"
+rootProject.name = "wschat"
 
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
-        maven("https://packages.confluent.io/maven/")
     }
 }
