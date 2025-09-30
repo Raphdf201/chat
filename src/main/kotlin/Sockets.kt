@@ -1,4 +1,5 @@
 package net.raphdf201
+
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
@@ -44,6 +45,10 @@ fun Application.configureSockets() {
                 }
             } finally {
                 connections -= connection
+                val sender = connection.name ?: "Anonymous"
+                connections.forEach {
+                    it.session.send("[$sender] has disconnected.")
+                }
             }
         }
     }
